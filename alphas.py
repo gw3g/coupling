@@ -37,30 +37,62 @@ def J(t, a, L): # jacobian
 _F = lambda t, a, L :  [F(t,a,L)]
 _J = lambda t, a, L : [[J(t,a,L)]]
 
-r = ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-l=2
-tinf=1000
-ainf=asymp(tinf,l)
-r.set_initial_value(ainf, tinf).set_f_params(l).set_jac_params(l)
-tf = 1.4
-tvs = []
-res = []
+def solver(tA,tB,n):
+    """ tA<tB, log scaling with n points """
+    crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
+    tinf=1000   # UV boundary conditions
+    l=2         # loop-order
+    r=(tB/tinf)**(1/n)
+    t_val,a_val = [],[]
+    crank.set_initial_value(asymp(tinf,l), tinf).set_f_params(l).set_jac_params(l)
+    while crank.successful() and crank.t > tB:
+        crank.integrate(crank.t*r)
+    r=(tA/tB)**(1/n)
+    while crank.successful() and crank.t > tA:
+        crank.integrate(crank.t*r)
+        t_val.append(crank.t)
+        a_val.append(crank.y[0])
+    return t_val, a_val
 
-while r.successful() and r.t > tf:
-    r.integrate(r.t*.98)
-    if r.t<10:
-        tvs.append(r.t)
-        res.append(r.y[0])
-    print(r.t, r.y[0])
+def alpha_ML():
+    crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
+    out = open("out.dat",'w')
+    st_l= []
+    tinf=1e2  # UV boundary conditions
+    l=3         # loop-order
+    k0=1e3
+    crank.set_initial_value(asymp(tinf,l), tinf).set_f_params(l).set_jac_params(l)
+    mu=max(k0*1.25*1.1, pi*1.1*1.25)
+    t_curr=2*log(mu)
+    while crank.successful() and crank.t > t_curr:
+        crank.integrate(crank.t*.99)
+    while crank.successful() and k0>0:
+        mu=max(k0*1.25*1.1, pi*1.1*1.25)
+        t_curr=2*log(mu)
+        crank.integrate(t_curr)
+        # out.write("{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,crank.y[0]/pi))
+        st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,crank.y[0]/pi))
+        k0-=.1
+    for st in st_l: out.write(st)
+    out.close()
 
-t_vals=[exp(t*.01) for t in range(1,200)]
-t1 = [asymp(exp(t*.01),1) for t in range(1,200)]
-t1 = [asymp(exp(t*.01),1) for t in range(1,200)]
-t2 = [asymp(exp(t*.01),2) for t in range(1,200)]
-t3 = [asymp(exp(t*.01),3) for t in range(1,200)] 
+alpha_ML()
 
-xscale('log')
+# t_UV=[exp(t*.01) for t in range(1,500)]
+# a_UV=[asymp(exp(t*.01),2) for t in range(1,500)] 
+
+# t_s,a_s = solver(1.,100,50)
+
+# out = open("out.dat",'w')
+
+# for i in range(1,len(t_s)):
+    # out.write("{0:.5e}  {1:.5e}\n".format(t_s[i],a_s[i]))
+
+# out.close()
+
+
+# xscale('log')
 # yscale('log')
-plot(t_vals,t3)
-plot(tvs,res,'ro')
-show()
+# plot(t_UV,a_UV)
+# plot(t_s,a_s,'ro')
+# show()
