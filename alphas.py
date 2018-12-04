@@ -2,7 +2,7 @@
 from scipy.integrate import ode
 from scipy.special import zeta
 from math import pi, log, exp
-from matplotlib.pyplot import plot, ylabel, show, xscale, yscale
+# from matplotlib.pyplot import plot, ylabel, show, xscale, yscale
 
 nf = 0 # flavours
 z3 = zeta(3)
@@ -54,29 +54,36 @@ def solver(tA,tB,n):
         a_val.append(crank.y[0])
     return t_val, a_val
 
-def alpha_ML():
+def alpha_T():
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    out = open("out.dat",'w')
+    out = open("vode_nf0_11.dat",'w')
     st_l= []
-    tinf=1e2  # UV boundary conditions
+    tinf=1e3  # UV boundary conditions
     l=3         # loop-order
     k0=1e3
     crank.set_initial_value(asymp(tinf,l), tinf).set_f_params(l).set_jac_params(l)
-    mu=max(k0*1.25*1.1, pi*1.1*1.25)
+    # mu=max(k0*1.25*1.1, pi*1.1*1.25)
+    Tc = 1.25
+    Tt = 1.1
+    mu=max(k0*Tc*Tt, pi*Tc*Tt)
     t_curr=2*log(mu)
     while crank.successful() and crank.t > t_curr:
         crank.integrate(crank.t*.99)
     while crank.successful() and k0>0:
-        mu=max(k0*1.25*1.1, pi*1.1*1.25)
+        mu=max(k0*Tc*Tt, pi*Tc*Tt)
         t_curr=2*log(mu)
         crank.integrate(t_curr)
         # out.write("{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,crank.y[0]/pi))
         st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,crank.y[0]/pi))
         k0-=.1
+
+    out.write("# Columns: k0/T, mu/Lambda, alpha/pi\n")
+    out.write("# (Tc = 1.25 Lambda, T=1.1Tc, nf=0, 3-loop )\n")
+
     for st in st_l: out.write(st)
     out.close()
 
-alpha_ML()
+alpha_T()
 
 # t_UV=[exp(t*.01) for t in range(1,500)]
 # a_UV=[asymp(exp(t*.01),2) for t in range(1,500)] 
