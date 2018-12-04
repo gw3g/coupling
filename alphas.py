@@ -39,7 +39,7 @@ _J = lambda t, a, L : [[J(t,a,L)]]
 def solver(tA,tB,n):
     """ tA<tB, log scaling with n points """
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    tinf=1000   # UV boundary conditions
+    tinf=1e3    # UV boundary conditions
     l=2         # loop-order
     r=(tB/tinf)**(1/n)
     t_val,a_val = [],[]
@@ -52,6 +52,13 @@ def solver(tA,tB,n):
         t_val.append(crank.t)
         a_val.append(crank.y[0])
     return t_val, a_val
+
+out = open("nf0_2loop.dat",'w')
+out.write("# Columns: t, UV, alpha\n")
+t_s,a_s=solver(2,1e2,40)
+for i in range(len(t_s)):
+    out.write("{0:.5e}  {1:.5e}  {2:.5e}\n".format(t_s[i],asymp(t_s[i],2),a_s[i]))
+out.close()
 
 def alpha_T():
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
@@ -81,8 +88,6 @@ def alpha_T():
 
     for st in st_l: out.write(st)
     out.close()
-
-alpha_T()
 
 # t_UV=[exp(t*.01) for t in range(1,500)]
 # a_UV=[asymp(exp(t*.01),2) for t in range(1,500)] 
