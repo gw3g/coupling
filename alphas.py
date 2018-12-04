@@ -2,7 +2,6 @@
 from scipy.integrate import ode
 from scipy.special import zeta
 from math import pi, log, exp
-# from matplotlib.pyplot import plot, ylabel, show, xscale, yscale
 
 nf = 0 # flavours
 z3 = zeta(3)
@@ -97,9 +96,3 @@ alpha_T()
 
 # out.close()
 
-
-# xscale('log')
-# yscale('log')
-# plot(t_UV,a_UV)
-# plot(t_s,a_s,'ro')
-# show()
