@@ -42,12 +42,13 @@ def J(t, a, L): # jacobian
 _F = lambda t, a, L :  [F(t,a,L)]
 _J = lambda t, a, L : [[J(t,a,L)]]
 
-def solver(tA,tB,n):
+def solver(tA,tB,n,tinf=1e3):
     """ tA<tB, log scaling with n points """
-    crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    tinf=1e3    # UV boundary conditions
-    l=1         # loop-order
-    r=(tB/tinf)**(1/n)
+    # crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
+    crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-2); # it seems that Dormand-Prince RK works 
+                                                          # for higher accuracy.
+    l=0         # loop-order
+    r=(tB/tinf)**(1e-5)
     t_val,a_val = [],[]
     crank.set_initial_value(asymp(tinf,l), tinf).set_f_params(l).set_jac_params(l)
     while crank.successful() and crank.t > tB:
@@ -59,11 +60,12 @@ def solver(tA,tB,n):
         a_val.append(crank.y[0])
     return t_val, a_val
 
-out = open("nf0_1loop.dat",'w')
-out.write("# Columns: t, UV, alpha\n")
-t_s,a_s=solver(0.5,1e2,40)
+out = open("nf0_error.dat",'w')
+out.write("# Columns: t, UV, a1(tinf=1e4), a2(tinf=1e2)\n")
+t_s,a_U=solver(.1,1e1,100,1e4)
+t_s,a_L=solver(.1,1e1,100,1e3)
 for i in range(len(t_s)):
-    out.write("{0:.5e}  {1:.5e}  {2:.5e}\n".format(t_s[i],asymp(t_s[i],2),a_s[i]))
+    out.write( "{0:.5e}  {1:.5e}  {2:.5e}  {3:.5e}\n".format(t_s[i],asymp(t_s[i],0),a_U[i],a_L[i]) )
 out.close()
 
 def alpha_T():
