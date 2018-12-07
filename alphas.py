@@ -1,7 +1,7 @@
 # How to put lipstick on a pig
 from scipy.integrate import ode
-from scipy.special import zeta
-from math import pi, log, exp
+from scipy.special import zeta, lambertw
+from math import pi, log, exp, atan
 
 nf = 0 # flavours
 z3 = zeta(3)
@@ -10,6 +10,12 @@ b = [(33-2*nf)/(12*pi),
      (2857-(5033/9)*nf+(325/27)*nf**2)/(128*pi**3),
      ((149753/6+z3*3564)-(1078361/162+z3*6508/27)*nf+
       (50065/162+z3*6472/81)*nf**2+(1093/728)*nf**3)/(256*pi**4)]
+
+def analyt(t):
+    """ analytic running, ... """
+    if t>0: return (1/t+1/(1-exp(t)))/b[0]
+    if t<0: return .5-atan(t/pi)/pi
+
 
 def asymp(t, L):
     """ L-loop UV alpha, t=2*log(mu/lam) """
@@ -40,7 +46,7 @@ def solver(tA,tB,n):
     """ tA<tB, log scaling with n points """
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
     tinf=1e3    # UV boundary conditions
-    l=2         # loop-order
+    l=1         # loop-order
     r=(tB/tinf)**(1/n)
     t_val,a_val = [],[]
     crank.set_initial_value(asymp(tinf,l), tinf).set_f_params(l).set_jac_params(l)
@@ -53,9 +59,9 @@ def solver(tA,tB,n):
         a_val.append(crank.y[0])
     return t_val, a_val
 
-out = open("nf0_2loop.dat",'w')
+out = open("nf0_1loop.dat",'w')
 out.write("# Columns: t, UV, alpha\n")
-t_s,a_s=solver(2,1e2,40)
+t_s,a_s=solver(0.5,1e2,40)
 for i in range(len(t_s)):
     out.write("{0:.5e}  {1:.5e}  {2:.5e}\n".format(t_s[i],asymp(t_s[i],2),a_s[i]))
 out.close()
