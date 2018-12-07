@@ -33,20 +33,24 @@ def plot_nf0():
     P.savefig("nf=0.pdf")
 
 def plot_check():
-    P.title(r"Running coupling, $n_f=0$")
+    P.title(r"1-loop couplings, $n_f=0$")
     P.xscale('log')
     P.xlabel(r"$t=2\log(\mu/\Lambda)$")
     P.yscale('log')
     P.ylabel(r"$\alpha$")
 
-    a1,b1,c1,d1 = loadtxt("nf0_error.dat",
+    a1,b1,c1,d1 = loadtxt("error2.dat",
+                delimiter="  ",unpack=True)
+    a2,b2,c2   = loadtxt("analytic.dat",
                 delimiter="  ",unpack=True)
 
-    P.plot(a1,c1,'b-',label="$t_\infty = 10^4$")
+    P.plot(a1,c1,'m-',label="$t_\infty = 10^4$")
     P.plot(a1,d1,'y-',label="$t_\infty = 10^2$")
     P.fill_between(a1,c1,d1,color='y',alpha=.5)
-    P.plot(a1,b1,'r:',label="1-loop, UV")
+    P.plot(a1,b1,'r:',label="2-loop, full")
+    # P.plot(a2,b2,'g-',label="timelike $t>0$")
+    # P.plot(a2,c2,'g:',label="spacelike $t<0$")
     P.legend()
-    P.savefig("error.pdf")
+    P.savefig("error2.pdf")
 
 plot_check()

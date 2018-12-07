@@ -1,7 +1,6 @@
 # How to put lipstick on a pig
-from scipy.integrate import ode
-from scipy.special import zeta, lambertw
 from math import pi, log, exp, atan
+from scipy.special import zeta, lambertw
 
 nf = 0 # flavours
 z3 = zeta(3)
@@ -14,30 +13,40 @@ b = [(33-2*nf)/(12*pi),
 def analyt(t):
     """ analytic running, ... """
     if t>0: return (1/t+1/(1-exp(t)))/b[0]
-    if t<0: return .5-atan(t/pi)/pi
+    elif t<0: return (.5-atan(-t/pi)/pi)/b[0]
 
+def a2loop(t):
+    """ implicit solution for 2-loop coupling """
+    r = b[0]**2/b[1]
+    z = -r*exp(-1-t*r)      # arg of product log
+    return -b[0]/(b[1]*(1+lambertw(z,-1).real) )
 
 def asymp(t, L):
     """ L-loop UV alpha, t=2*log(mu/lam) """
     res  = 1
-    if L>0: res += -b[1]*log(t)/(b[0]**2*t)
-    if L>1: res += +(b[1]**2*(log(2)**2-log(t)-1)+b[0]*b[2])/(b[0]**4*t**2)
-    if L>2: res += -(b[1]**3-b[0]**2*b[3]-4*b[1]**3*log(t)+6*b[0]*b[1]*b[2]*log(t)
+    if L>1: res += -b[1]*log(t)/(b[0]**2*t)
+    if L>2: res += +(b[1]**2*(log(2)**2-log(t)-1)+b[0]*b[2])/(b[0]**4*t**2)
+    if L>3: res += -(b[1]**3-b[0]**2*b[3]-4*b[1]**3*log(t)+6*b[0]*b[1]*b[2]*log(t)
                      -5*b[1]**3*log(t)**2+2*b[1]**3*log(t)**3)/(2*b[0]**6*t**3)
+    if L>4: print("five loop (or higher) not yet ready!")
     res /= b[0]*t
     return res
 
+#-----------------------------------------------------------------------------#
+# numerical RG-evolution
+from scipy.integrate import ode
+
 def F(t, a, L): # da/dt = ...
-    if L==0:
+    if L==1:
         return -b[0]*a**2
     else:
-        return -b[L]*a**(L+2)+F(t, a, L-1)
+        return -b[L-1]*a**(L+1)+F(t, a, L-1)
 
 def J(t, a, L): # jacobian
-    if L==0:
+    if L==1:
         return -2*b[0]*a
     else:
-        return -(L+2)*b[L]*a**(L+1)+J(t, a, L-1)
+        return -(L+1)*b[L-1]*a**L+J(t, a, L-1)
 
 _F = lambda t, a, L :  [F(t,a,L)]
 _J = lambda t, a, L : [[J(t,a,L)]]
@@ -45,9 +54,9 @@ _J = lambda t, a, L : [[J(t,a,L)]]
 def solver(tA,tB,n,tinf=1e3):
     """ tA<tB, log scaling with n points """
     # crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-2); # it seems that Dormand-Prince RK works 
-                                                          # for higher accuracy.
-    l=0         # loop-order
+    crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-3); # it seems that Dormand-Prince RK works 
+                                                          # for higher accuracy // 7.12.18
+    l=2         # loop-order
     r=(tB/tinf)**(1e-5)
     t_val,a_val = [],[]
     crank.set_initial_value(asymp(tinf,l), tinf).set_f_params(l).set_jac_params(l)
@@ -59,14 +68,6 @@ def solver(tA,tB,n,tinf=1e3):
         t_val.append(crank.t)
         a_val.append(crank.y[0])
     return t_val, a_val
-
-out = open("nf0_error.dat",'w')
-out.write("# Columns: t, UV, a1(tinf=1e4), a2(tinf=1e2)\n")
-t_s,a_U=solver(.1,1e1,100,1e4)
-t_s,a_L=solver(.1,1e1,100,1e3)
-for i in range(len(t_s)):
-    out.write( "{0:.5e}  {1:.5e}  {2:.5e}  {3:.5e}\n".format(t_s[i],asymp(t_s[i],0),a_U[i],a_L[i]) )
-out.close()
 
 def alpha_T():
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
@@ -96,16 +97,4 @@ def alpha_T():
 
     for st in st_l: out.write(st)
     out.close()
-
-# t_UV=[exp(t*.01) for t in range(1,500)]
-# a_UV=[asymp(exp(t*.01),2) for t in range(1,500)] 
-
-# t_s,a_s = solver(1.,100,50)
-
-# out = open("out.dat",'w')
-
-# for i in range(1,len(t_s)):
-    # out.write("{0:.5e}  {1:.5e}\n".format(t_s[i],a_s[i]))
-
-# out.close()
 
