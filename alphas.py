@@ -2,7 +2,7 @@
 from math import pi, log, exp, atan
 from scipy.special import zeta, lambertw
 
-nf = 0 # flavours
+nf = 3 # flavours
 z3 = zeta(3)
 z4 = zeta(4)
 z5 = zeta(5)
@@ -81,6 +81,36 @@ def solver(tA,tB,n,tinf=1e3):
         t_val.append(crank.t)
         a_val.append(crank.y[0])
     return t_val, a_val
+
+def alpha_mu(l): # l=1..5 loop-order
+    crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
+    out = open("nf3_"+str(l)+"loop.dat",'w')
+    st_l= []
+    tinf=1e3  # UV boundary conditions
+    #l=5         # loop-order
+    k0=1e3
+    crank.set_initial_value(asymp(tinf,l), tinf).set_f_params(l).set_jac_params(l)
+    # mu=max(k0*1.25*1.1, pi*1.1*1.25)
+    Tc = 1.25
+    Tt = 1.1
+    mu=200
+    L_msbar=.341
+    t_curr=2*log(mu/L_msbar)
+    while crank.successful() and crank.t > t_curr:
+        crank.integrate(crank.t*.99)
+    while crank.successful() and (crank.y[0]<1.):
+        mu*=.99
+        t_curr=2*log(mu/L_msbar)
+        crank.integrate(t_curr)
+        # out.write("{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,crank.y[0]/pi))
+        st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(mu,asymp(t_curr,l),crank.y[0]))
+
+    out.write("# Columns: mu/GeV, alpha\n")
+    out.write("# ( Lambda=341[MeV], nf=3, "+str(l)+"-loop )\n")
+
+    for st in st_l: out.write(st)
+    out.close()
+
 
 def alpha_T():
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
