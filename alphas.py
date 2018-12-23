@@ -2,34 +2,42 @@
 from math import pi, log, exp, atan
 from scipy.special import zeta, lambertw
 
-nf = 3 # flavours
-z3 = zeta(3)
-z4 = zeta(4)
-z5 = zeta(5)
-b = [(33-2*nf)/(12*pi),
-     (153-19.*nf)/(24*pi**2),
-     (2857-(5033/9)*nf+(325/27)*nf**2)/(128*pi**3),
-     ( (149753/6+z3*3564)-(1078361/162+z3*6508/27)*nf+
-       (50065/162+z3*6472/81)*nf**2+(1093/728)*nf**3 )/(256*pi**4),
-     ( (8157455/16+z3*621885/2-z4*88209/2-z5*288090)+
-       (-336460813/1944-z3*4811164/81+z4*33935/6+z5*1358995/27)*nf+
-       (25960913/1944+z3*698531/81-z4*10526/9-z5*381760/81)*nf**2+
-       (-630559/5832-z3*48722/243+z4*1618/27+z5*460/9)*nf**3+
-       (1205/2916-z3*152/81)*nf**4 )/(1024*pi**5)
-       ]
+b  = [0]*5
 
-def analyt(t):
-    """ analytic running, ... """
-    if t>0: return (1/t+1/(1-exp(t)))/b[0]
-    elif t<0: return (.5-atan(-t/pi)/pi)/b[0]
+def qcd(nf):
+    z3 = zeta(3)
+    z4 = zeta(4)
+    z5 = zeta(5)
 
-def a2loop(t):
+    # arxiv:1606.08659
+    global b
+    b[0]= (33-2*nf)/(12*pi)
+    b[1]= (153-19.*nf)/(24*pi**2)
+    b[2]= (2857-(5033/9)*nf+(325/27)*nf**2)/(128*pi**3)
+    b[3]= ( (149753/6+z3*3564)-(1078361/162+z3*6508/27)*nf+
+            (50065/162+z3*6472/81)*nf**2+(1093/728)*nf**3 )/(256*pi**4)
+    b[4]= ( (8157455/16+z3*621885/2-z4*88209/2-z5*288090)+
+            (-336460813/1944-z3*4811164/81+z4*33935/6+z5*1358995/27)*nf+
+            (25960913/1944+z3*698531/81-z4*10526/9-z5*381760/81)*nf**2+
+            (-630559/5832-z3*48722/243+z4*1618/27+z5*460/9)*nf**3+
+            (1205/2916-z3*152/81)*nf**4 )/(1024*pi**5)
+
+qcd(0)
+
+#-----------------------------------------------------------------------------#
+# some functions
+
+def A_analy(t):
+    """ analytic running, [ space, time ]-like """
+    return [ (1/t+1/(1-exp(t)))/b[0], (.5-atan(-t/pi)/pi)/b[0] ]
+
+def A_2loop(t):
     """ implicit solution for 2-loop coupling """
     r = b[0]**2/b[1]
     z = -r*exp(-1-t*r)      # arg of product log
     return -b[0]/(b[1]*(1+lambertw(z,-1).real) )
 
-def asymp(t, L):
+def A_asymp(t, L):
     """ L-loop UV alpha, t=2*log(mu/lam) """
     res  = 1
     if L>1: res += -b[1]*log(t)/(b[0]**2*t)
@@ -64,67 +72,66 @@ def J(t, a, L): # jacobian
 _F = lambda t, a, L :  [F(t,a,L)]
 _J = lambda t, a, L : [[J(t,a,L)]]
 
-def solver(tA,tB,n,tinf=1e3):
-    """ tA<tB, log scaling with n points """
+def solver(t_min,l,t_inf=1e3):
+    """ l loop-order, RG from t_inf """
+    if (t_min>t_inf/10): t_inf=1e3*t
     # crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-3); # it seems that Dormand-Prince RK works 
+    crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-4); # it seems that Dormand-Prince RK works 
                                                           # for higher accuracy // 7.12.18
-    l=2         # loop-order
-    r=(tB/tinf)**(1e-5)
-    t_val,a_val = [],[]
-    crank.set_initial_value(asymp(tinf,l), tinf).set_f_params(l).set_jac_params(l)
-    while crank.successful() and crank.t > tB:
-        crank.integrate(crank.t*r)
-    r=(tA/tB)**(1/n)
-    while crank.successful() and crank.t > tA:
-        crank.integrate(crank.t*r)
-        t_val.append(crank.t)
-        a_val.append(crank.y[0])
-    return t_val, a_val
+    r=(t_min/t_inf)**(1e-5) # here 10^5 iterations
+    crank.set_initial_value(A_asymp(t_inf,l), t_inf).set_f_params(l).set_jac_params(l)
 
-def alpha_mu(l): # l=1..5 loop-order
+    while crank.successful() and crank.t > t_min:
+        crank.integrate(crank.t*r)
+    if not crank.successful():
+        print("\n  ... Ooops, the integrator failed!\n")
+        return (-1)
+    return crank.y[0]
+
+#-----------------------------------------------------------------------------#
+
+def alpha_mu(nf,l):
+    qcd(nf)
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    out = open("nf3_"+str(l)+"loop.dat",'w')
+    out = open("mu_nf"+str(nf)+"_"+str(l)+"loop.dat",'w')
     st_l= []
-    tinf=1e3  # UV boundary conditions
-    #l=5         # loop-order
-    k0=1e3
-    crank.set_initial_value(asymp(tinf,l), tinf).set_f_params(l).set_jac_params(l)
-    # mu=max(k0*1.25*1.1, pi*1.1*1.25)
-    Tc = 1.25
-    Tt = 1.1
+    t_inf=1e3  # UV boundary conditions
     mu=200
     L_msbar=.341
     t_curr=2*log(mu/L_msbar)
+
+    crank.set_initial_value(A_asymp(t_inf,l), t_inf).set_f_params(l).set_jac_params(l)
     while crank.successful() and crank.t > t_curr:
         crank.integrate(crank.t*.99)
     while crank.successful() and (crank.y[0]<1.):
         mu*=.99
         t_curr=2*log(mu/L_msbar)
         crank.integrate(t_curr)
-        # out.write("{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,crank.y[0]/pi))
-        st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(mu,asymp(t_curr,l),crank.y[0]))
+        st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(mu,A_asymp(t_curr,l),crank.y[0]))
 
-    out.write("# Columns: mu/GeV, alpha\n")
-    out.write("# ( Lambda=341[MeV], nf=3, "+str(l)+"-loop )\n")
-
+    # output
+    out.write("# Columns: mu/GeV, UV asymptotics, alpha\n")
+    out.write("# ( Lambda=341[MeV], nf="+str(nf)+", "+str(l)+"-loop )\n")
     for st in st_l: out.write(st)
     out.close()
 
+#-----------------------------------------------------------------------------#
 
-def alpha_T():
+def alpha_T(nf,l):
+    qcd(nf)
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    out = open("vode_nf0_11.dat",'w')
+    out = open("k0_nf"+str(nf)+"_"+str(l)+"loop.dat",'w')
     st_l= []
-    tinf=1e3  # UV boundary conditions
-    l=3         # loop-order
+
+    t_inf=1e3  # UV boundary conditions
     k0=1e3
-    crank.set_initial_value(asymp(tinf,l), tinf).set_f_params(l).set_jac_params(l)
-    # mu=max(k0*1.25*1.1, pi*1.1*1.25)
+    crank.set_initial_value(A_asymp(t_inf,l), t_inf).set_f_params(l).set_jac_params(l)
     Tc = 1.25
     Tt = 1.1
     mu=max(k0*Tc*Tt, pi*Tc*Tt)
     t_curr=2*log(mu)
+
+    crank.set_initial_value(A_asymp(t_inf,l), t_inf).set_f_params(l).set_jac_params(l)
     while crank.successful() and crank.t > t_curr:
         crank.integrate(crank.t*.99)
     while crank.successful() and k0>0:
@@ -135,9 +142,9 @@ def alpha_T():
         st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,crank.y[0]/pi))
         k0-=.1
 
+    # output
     out.write("# Columns: k0/T, mu/Lambda, alpha/pi\n")
     out.write("# (Tc = 1.25 Lambda, T=1.1Tc, nf=0, 3-loop )\n")
-
     for st in st_l: out.write(st)
     out.close()
 

@@ -1,6 +1,5 @@
 import matplotlib.pyplot as P
 from numpy import loadtxt
-from alphas import asymp
 from math import log
 P.rc('text', usetex=True)
 
@@ -40,15 +39,15 @@ def plot_nf3():
     P.ylabel(r"$\alpha (\mu)$")
     P.ylim(0,1)
 
-    a1,b1,c1 = loadtxt("nf3_1loop.dat",
+    a1,b1,c1 = loadtxt("mu_nf3_1loop.dat",
                 delimiter="  ",unpack=True)
-    a2,b2,c2 = loadtxt("nf3_2loop.dat",
+    a2,b2,c2 = loadtxt("mu_nf3_2loop.dat",
                 delimiter="  ",unpack=True)
-    a3,b3,c3 = loadtxt("nf3_3loop.dat",
+    a3,b3,c3 = loadtxt("mu_nf3_3loop.dat",
                 delimiter="  ",unpack=True)
-    a4,b4,c4 = loadtxt("nf3_4loop.dat",
+    a4,b4,c4 = loadtxt("mu_nf3_4loop.dat",
                 delimiter="  ",unpack=True)
-    a5,b5,c5 = loadtxt("nf3_5loop.dat",
+    a5,b5,c5 = loadtxt("mu_nf3_5loop.dat",
                 delimiter="  ",unpack=True)
     a,b,c = loadtxt("nf3_analytic.dat",
                 delimiter="  ",unpack=True)
@@ -66,7 +65,8 @@ def plot_nf3():
     P.plot(a4,c4,'r-.',label=r"4-loop")
     P.plot(a5,c5,'r-',label=r"5-loop")
     P.legend()
-    P.savefig("nf=3.pdf")
+    P.show()
+    # P.savefig("nf=3.png")
 
 
 def plot_check():
