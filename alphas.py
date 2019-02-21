@@ -90,27 +90,29 @@ def solver(t_min,l,t_inf=1e3):
 
 #-----------------------------------------------------------------------------#
 
-def alpha_mu(nf,l):
+def MakeTable(nf,l):
     qcd(nf)
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    out = open("mu_nf"+str(nf)+"_"+str(l)+"loop.dat",'w')
+    #crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-3); # it seems that Dormand-Prince RK works 
+    out = open("table_Coupling_{nf"+str(nf)+", "+str(l)+"-loop}.dat",'w')
     st_l= []
     t_inf=1e3  # UV boundary conditions
-    mu=200
-    L_msbar=.341
-    t_curr=2*log(mu/L_msbar)
+    mu=5000.   # in units of L_msbar
+    L_msbar=1. # value = .341 GeV
 
+    t_curr=2*log(mu/L_msbar)
+    r=(t_min/t_inf)**(1e-5) # here 10^5 iterations "preparation"
     crank.set_initial_value(A_asymp(t_inf,l), t_inf).set_f_params(l).set_jac_params(l)
     while crank.successful() and crank.t > t_curr:
-        crank.integrate(crank.t*.99)
-    while crank.successful() and (crank.y[0]<1.):
-        mu*=.99
+        crank.integrate(crank.t*r)
+    while crank.successful() and (mu>2.):
+        mu-=1e-2
         t_curr=2*log(mu/L_msbar)
         crank.integrate(t_curr)
         st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(mu,A_asymp(t_curr,l),crank.y[0]))
 
     # output
-    out.write("# Columns: mu/GeV, UV asymptotics, alpha\n")
+    out.write("# Columns: mu/Lambda, UV-approx, alpha\n")
     out.write("# ( Lambda=341[MeV], nf="+str(nf)+", "+str(l)+"-loop )\n")
     for st in st_l: out.write(st)
     out.close()
@@ -122,12 +124,12 @@ def alpha_T(nf,l):
     qcd(nf)
     #crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-4);
     #crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    out = open("coupling_k3_nf"+str(nf)+"_"+str(l)+"loop.dat",'w')
+    out = open("coupling2_zoomed_k3_nf"+str(nf)+".dat",'w')
     st_l= []
     k = 3.*2*pi/3.
 
     t_inf=1e4  # UV boundary conditions
-    k0=10    # initial k0 value
+    k0=1e3    # initial k0 value
     Tc = 1.25
     Tt = 1.1
     K = (abs(k0*k0-k*k))**.5
@@ -137,19 +139,22 @@ def alpha_T(nf,l):
     #crank.set_initial_value(A_asymp(t_inf,l), t_inf).set_f_params(l).set_jac_params(l)
     #while crank.successful() and crank.t > t_curr:
     #    crank.integrate(crank.t*.99)
-    while k0>1e-4:
+    #while k0>1e-4:
+    while k0>.01:
         K = (abs(k0*k0-k*k))**.5
-        mu=max(K*Tc*Tt, pi*Tc*Tt)
+        mu=max(K*Tc*Tt, 4.*pi*Tc*Tt)
         t_curr=2*log(mu)
         print("k0 = ",k0)
         #crank.integrate(t_curr)
         res = solver(t_curr,3,1e3)
+        print("k0 = ",k0)
+        print("a = ",res)
         # out.write("{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,crank.y[0]/pi))
-        st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,res))
-        k0-=1e-2
+        st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,res/pi))
+        k0-=1e-1
     # output
     out.write("# Columns: k0/T, mu/Lambda, alpha/pi\n")
-    out.write("# (Tc = 1.25 Lambda, T=1.1Tc, nf=0, 3-loop )\n")
+    out.write("# (Tc = 1.25 Lambda, T=1.1Tc, nf=0, "+str(l)+"-loop )\n")
     for st in st_l: out.write(st)
     out.close()
 
