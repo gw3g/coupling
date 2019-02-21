@@ -1,7 +1,6 @@
 from alphas import *
 
-alpha_mu(3,1)
-alpha_mu(3,2)
-alpha_mu(3,3)
-alpha_mu(3,4)
-alpha_mu(3,5)
+Qcd(0)
+t=0.42
+print(  "RG-solver gives : "+str( Solver(t,2) )  )
+print(  "Exact solution  : "+str( A_2loop(t ) )  )

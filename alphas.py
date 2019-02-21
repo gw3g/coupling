@@ -4,7 +4,7 @@ from scipy.special import zeta, lambertw
 
 b  = [0]*5
 
-def qcd(nf):
+def Qcd(nf):
     z3 = zeta(3)
     z4 = zeta(4)
     z5 = zeta(5)
@@ -22,7 +22,7 @@ def qcd(nf):
             (-630559/5832-z3*48722/243+z4*1618/27+z5*460/9)*nf**3+
             (1205/2916-z3*152/81)*nf**4 )/(1024*pi**5)
 
-qcd(0)
+Qcd(0)
 
 #-----------------------------------------------------------------------------#
 # some functions
@@ -72,7 +72,7 @@ def J(t, a, L): # jacobian
 _F = lambda t, a, L :  [F(t,a,L)]
 _J = lambda t, a, L : [[J(t,a,L)]]
 
-def solver(t_min,l,t_inf=1e3):
+def Solver(t_min,l,t_inf=1e3):
     """ l loop-order, RG from t_inf """
     if (t_min>t_inf/10): t_inf=1e3*t
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
@@ -91,22 +91,22 @@ def solver(t_min,l,t_inf=1e3):
 #-----------------------------------------------------------------------------#
 
 def MakeTable(nf,l):
-    qcd(nf)
+    Qcd(nf)
     crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
     #crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-3); # it seems that Dormand-Prince RK works 
-    out = open("table_Coupling_{nf"+str(nf)+", "+str(l)+"-loop}.dat",'w')
+    out = open("table_Coupling_{nf"+str(nf)+","+str(l)+"-loop}.dat",'w')
     st_l= []
     t_inf=1e3  # UV boundary conditions
     mu=5000.   # in units of L_msbar
     L_msbar=1. # value = .341 GeV
 
-    t_curr=2*log(mu/L_msbar)
+    t_min=2*log(mu/L_msbar)
     r=(t_min/t_inf)**(1e-5) # here 10^5 iterations "preparation"
     crank.set_initial_value(A_asymp(t_inf,l), t_inf).set_f_params(l).set_jac_params(l)
-    while crank.successful() and crank.t > t_curr:
+    while crank.successful() and crank.t > t_min:
         crank.integrate(crank.t*r)
     while crank.successful() and (mu>2.):
-        mu-=1e-2
+        mu-=5e-3
         t_curr=2*log(mu/L_msbar)
         crank.integrate(t_curr)
         st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(mu,A_asymp(t_curr,l),crank.y[0]))
@@ -114,47 +114,6 @@ def MakeTable(nf,l):
     # output
     out.write("# Columns: mu/Lambda, UV-approx, alpha\n")
     out.write("# ( Lambda=341[MeV], nf="+str(nf)+", "+str(l)+"-loop )\n")
-    for st in st_l: out.write(st)
-    out.close()
-
-#-----------------------------------------------------------------------------#
-
-def alpha_T(nf,l):
-    ''' temperature dependence '''
-    qcd(nf)
-    #crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-4);
-    #crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    out = open("coupling2_zoomed_k3_nf"+str(nf)+".dat",'w')
-    st_l= []
-    k = 3.*2*pi/3.
-
-    t_inf=1e4  # UV boundary conditions
-    k0=1e3    # initial k0 value
-    Tc = 1.25
-    Tt = 1.1
-    K = (abs(k0*k0-k*k))**.5
-    mu=max(K*Tc*Tt, pi*Tc*Tt)
-    t_curr=2*log(mu)
-
-    #crank.set_initial_value(A_asymp(t_inf,l), t_inf).set_f_params(l).set_jac_params(l)
-    #while crank.successful() and crank.t > t_curr:
-    #    crank.integrate(crank.t*.99)
-    #while k0>1e-4:
-    while k0>.01:
-        K = (abs(k0*k0-k*k))**.5
-        mu=max(K*Tc*Tt, 4.*pi*Tc*Tt)
-        t_curr=2*log(mu)
-        print("k0 = ",k0)
-        #crank.integrate(t_curr)
-        res = solver(t_curr,3,1e3)
-        print("k0 = ",k0)
-        print("a = ",res)
-        # out.write("{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,crank.y[0]/pi))
-        st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(k0,mu,res/pi))
-        k0-=1e-1
-    # output
-    out.write("# Columns: k0/T, mu/Lambda, alpha/pi\n")
-    out.write("# (Tc = 1.25 Lambda, T=1.1Tc, nf=0, "+str(l)+"-loop )\n")
     for st in st_l: out.write(st)
     out.close()
 
