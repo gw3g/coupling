@@ -92,8 +92,8 @@ def Solver(t_min,l,t_inf=1e3):
 
 def MakeTable(nf,l):
     Qcd(nf)
-    crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
-    #crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-3); # it seems that Dormand-Prince RK works 
+    #crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
+    crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-3);
     out = open("table_Coupling_{nf"+str(nf)+","+str(l)+"-loop}.dat",'w')
     st_l= []
     t_inf=1e3  # UV boundary conditions
@@ -105,10 +105,14 @@ def MakeTable(nf,l):
     crank.set_initial_value(A_asymp(t_inf,l), t_inf).set_f_params(l).set_jac_params(l)
     while crank.successful() and crank.t > t_min:
         crank.integrate(crank.t*r)
-    while crank.successful() and (mu>2.):
+    while crank.successful() and (mu>1.9):
         mu-=5e-3
         t_curr=2*log(mu/L_msbar)
         crank.integrate(t_curr)
+        if not crank.successful():
+            print("\n  ... Ooops, the integrator failed!\n")
+            print("mu = "+str(mu))
+            return (-1)
         st_l.insert(0,"{0:.5e}  {1:.5e}  {2:.5e}\n".format(mu,A_asymp(t_curr,l),crank.y[0]))
 
     # output

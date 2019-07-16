@@ -27,18 +27,18 @@ def ReadTable(nf,l):
     tbl = loadtxt("table_Coupling_{nf"+str(nf)+","+str(l)+"-loop}.dat",usecols=(0,2),unpack=True)
     return tbl
 
-def alpha_k0(tbl,k,T):
+def alpha_k0(tbl,k,T,tag):
     ''' prepare coupling dependence, compatible w/ 1604.07533 '''
     # output
-    out = open("coupling_nf0_{"+"k={0:.2f}".format(k)+",t="+str(T)+"}.1.dat",'w')
-    out.write("# Columns: k0/T, mu_opt/Lambda, alpha xi={1.,.5,2.}\n")
-    out.write("# (Tc = 1.25 Lambda, T="+str(T)+"Tc, nf=0, 5-loop RG)\n")
+    #out = open("coupling_nf0_{"+"k={0:.2f}".format(k)+",t="+str(T)+"}."+tag+".dat",'w')
+    out = open("coupling_nf2_{"+"k={0:.2f}".format(k)+",t="+str(T)+"}."+tag+".dat",'w')
+    out.write("# Columns: k0/T, mu_opt/Lambda, alpha xi={.9,1,1.1}\n")
+    #out.write("# (Tc = 1.25 Lambda, T="+str(T)+"Tc, nf=0, 5-loop RG)\n")
+    out.write("# (Tc = .56 Lambda, T="+str(T)+"Tc, nf=2, 5-loop RG)\n")
     # out.write("# (mu_opt=max[(2.pi.T)^2+|K^2|], vary mu=mu_opt.xi)\n")
-    out.write("# (mu_opt=sqrt{(xi.pi.T)^2+|K^2|}, vary xi)\n")
     k0=1e-1    # initial k0 value
-    Tc = 1.25
-    # print("Reading table ...")
-    # tbl = ReadTable(0,3)
+    #Tc = 1.25 # nf=0
+    Tc = .56 # nf=2
 
     while k0<2e1:
         K = ( abs(k0*k0-k*k) )**.5
@@ -49,12 +49,12 @@ def alpha_k0(tbl,k,T):
         t_curr=2*log(mu)
         alpha1 = interpolate_Alpha(tbl,mu)
         # xi = .9
-        mu=Tc*T*(K**2 + (.5*pi)**2)**.5
+        mu=Tc*T*(K**2 + (.9*pi)**2)**.5
         t_curr=2*log(mu)
         alpha2 = interpolate_Alpha(tbl,mu)
 
         # xi = 1.1
-        mu=Tc*T*(K**2 + (2.*pi)**2)**.5
+        mu=Tc*T*(K**2 + (1.1*pi)**2)**.5
         t_curr=2*log(mu)
         alpha3 = interpolate_Alpha(tbl,mu)
 
@@ -67,20 +67,22 @@ def alpha_k0(tbl,k,T):
     return 0
 
 print("Reading table ...")
-tbl = ReadTable(0,5)
+tbl = ReadTable(2,5)
 
-T = 1.3
-for i in [1,2,3]:
-    k = i*2*pi*7/24.
-    alpha_k0(tbl,k,T)
+#T = 1.3
+#for i in [1,2,3]:
+    #k = i*2*pi*7/24.
+    #alpha_k0(tbl,k,T,"1")
 
 T = 1.2
 for i in [1,2,3]:
     k = (i**.5)*pi/2.
-    alpha_k0(tbl,k,T)
+    alpha_k0(tbl,k,T,"1")
+alpha_k0(tbl,pi,T,"1")
+alpha_k0(tbl,1.5*pi,T,"1")
 
-T = 1.1
-for i in [1,2,3]:
-    k = i*2*pi/3.
-    alpha_k0(tbl,k,T)
+#T = 1.1
+#for i in [1,2,3]:
+    #k = i*2*pi/3.
+    #alpha_k0(tbl,k,T,"1")
 
