@@ -94,17 +94,20 @@ def MakeTable(nf,l):
     Qcd(nf)
     #crank=ode(_F,_J).set_integrator('vode', method='bdf', with_jacobian=True)
     crank=ode(_F,_J).set_integrator('dopri5', rtol=1e-3);
-    out = open("table_Coupling_{nf"+str(nf)+","+str(l)+"-loop}.dat",'w')
+    fname = "table_Coupling_{nf"+str(nf)+","+str(l)+"-loop}.dat"
+    out = open(fname,'w')
     st_l= []
     t_inf=1e3  # UV boundary conditions
     mu=5000.   # in units of L_msbar
     L_msbar=1. # value = .341 GeV
+    print("Warming up the integrator ...\n")
 
     t_min=2*log(mu/L_msbar)
     r=(t_min/t_inf)**(1e-5) # here 10^5 iterations "preparation"
     crank.set_initial_value(A_asymp(t_inf,l), t_inf).set_f_params(l).set_jac_params(l)
     while crank.successful() and crank.t > t_min:
         crank.integrate(crank.t*r)
+    print("Starting run-down at log(mu^2/L_msbar^2) = "+str(t_min)+"\n")
     while crank.successful() and (mu>1.9):
         mu-=5e-3
         t_curr=2*log(mu/L_msbar)
@@ -119,5 +122,6 @@ def MakeTable(nf,l):
     out.write("# Columns: mu/Lambda, UV-approx, alpha\n")
     out.write("# ( Lambda=341[MeV], nf="+str(nf)+", "+str(l)+"-loop )\n")
     for st in st_l: out.write(st)
+    print("Table written to ["+fname+"]\n")
     out.close()
 
