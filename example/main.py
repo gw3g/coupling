@@ -45,7 +45,7 @@ def alpha_mu(nf,l):
     out.close()
     return 0
 
-alpha_mu(2,5)
+#alpha_mu(2,5)
 
 def alpha_k0(tbl,k,T,tag):
     ''' prepare coupling dependence, compatible w/ 1604.07533 '''
@@ -86,20 +86,20 @@ def alpha_k0(tbl,k,T,tag):
     out.close()
     return 0
 
-#print("Reading table ...")
-#tbl = ReadTable(2,5)
+print("Reading table ...")
+tbl = ReadTable(2,5)
 
 #T = 1.3
 #for i in [1,2,3]:
     #k = i*2*pi*7/24.
     #alpha_k0(tbl,k,T,"1")
 
-#T = 1.2
-#for i in [1,2,3]:
-#    k = (i**.5)*pi/2.
-#    alpha_k0(tbl,k,T,"1")
-#alpha_k0(tbl,pi,T,"1")
-#alpha_k0(tbl,1.5*pi,T,"1")
+T = 1.2
+for i in [1,2,3]:
+    k = (i**.5)*pi/2.
+    alpha_k0(tbl,k,T,"1")
+alpha_k0(tbl,pi,T,"1")
+alpha_k0(tbl,1.5*pi,T,"1")
 
 #T = 1.1
 #for i in [1,2,3]:

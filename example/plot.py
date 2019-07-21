@@ -50,4 +50,4 @@ def plot_k0():
     P.show()
     #P.savefig("a.pdf")
 
-plot_mu()
+plot_k0()
