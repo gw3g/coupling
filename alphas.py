@@ -22,8 +22,6 @@ def Qcd(nf):
             (-630559/5832-z3*48722/243+z4*1618/27+z5*460/9)*nf**3+
             (1205/2916-z3*152/81)*nf**4 )/(1024*pi**5)
 
-Qcd(0)
-
 #-----------------------------------------------------------------------------#
 # some functions
 
@@ -44,11 +42,11 @@ def A_asymp(t, L):
     if L>2: res += +(b[1]**2*(log(2)**2-log(t)-1)+b[0]*b[2])/(b[0]**4*t**2)
     if L>3: res += -(b[1]**3-b[0]**2*b[3]-4*b[1]**3*log(t)+6*b[0]*b[1]*b[2]*log(t)
                      -5*b[1]**3*log(t)**2+2*b[1]**3*log(t)**3)/(2*b[0]**6*t**3)
-    if L>4: res += +(7*b[1]**4-18*b[0]*b[1]**2*b[2]+10*b[0]**2*b[2]**2-b[0]**2*b[1]*b[3]
-                     +2*b[0]**3*b[4]+24*b[1]**4*log(t)-18*b[0]*b[1]**2*b[2]*log(t)
-                     -12*b[0]**2*b[1]*b[3]*log(t)-9*b[1]**4*log(t)**2
-                     +36*b[0]*b[1]**2*b[2]*log(t)**2-26*b[1]**4*log(t)**3
-                     +6*b[1]**4*log(t)**4)/(6*b[0]**8*t**4)
+    if L>4: res += +(7*b[1]**4-18*b[0]*b[1]**2*b[2]+10*b[0]**2*b[2]**2
+                     -b[0]**2*b[1]*b[3]+2*b[0]**3*b[4]+24*b[1]**4*log(t)
+                     -18*b[0]*b[1]**2*b[2]*log(t)-12*b[0]**2*b[1]*b[3]*log(t)
+                     -9*b[1]**4*log(t)**2+36*b[0]*b[1]**2*b[2]*log(t)**2
+                     -26*b[1]**4*log(t)**3+6*b[1]**4*log(t)**4)/(6*b[0]**8*t**4)
     if L>5: print("six loop (or higher)? C'mon ...")
     res /= b[0]*t
     return res
@@ -99,7 +97,7 @@ def MakeTable(nf,l):
     st_l= []
     t_inf=1e3  # UV boundary conditions
     mu=5000.   # in units of L_msbar
-    L_msbar=1. # value = .341 GeV
+    L_msbar=1.
     print("Warming up the integrator ...\n")
 
     t_min=2*log(mu/L_msbar)
@@ -120,7 +118,7 @@ def MakeTable(nf,l):
 
     # output
     out.write("# Columns: mu/Lambda, UV-approx, alpha\n")
-    out.write("# ( Lambda=341[MeV], nf="+str(nf)+", "+str(l)+"-loop )\n")
+    out.write("# ( nf="+str(nf)+", "+str(l)+"-loop )\n")
     for st in st_l: out.write(st)
     print("Table written to ["+fname+"]\n")
     out.close()
