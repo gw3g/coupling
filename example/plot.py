@@ -28,13 +28,13 @@ def plot_k0():
     T = 1.2
     #k = (3**.5)*pi/2.
     k = 1.5*pi
-    tag = "1"
+    tag = "R1(5)"
 
     P.title(r"$k=$"+str(k)+r" : 5-loop coupling, $n_f=2$")
     P.xlabel(r"$k_0/T$")
     P.ylabel(r"$\alpha\big(\sqrt{|K^2|+(\xi 2\pi T)^2}\big)$")
 
-    fin = "coupling_nf2_{"+"k={0:.2f}".format(k)+",t="+str(T)+"}."+tag+".dat"
+    fin = "R.1/coupling_nf2_{"+"k={0:.2f}".format(k)+",t="+str(T)+"}."+tag+".dat"
 
 
     a1,b1,c1,d1,e1 = loadtxt(fin,
