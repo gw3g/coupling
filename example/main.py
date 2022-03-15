@@ -45,14 +45,15 @@ def alpha_mu(nf,l):
     out.close()
     return 0
 
-def mu_opt(k0,k,T,lam,r=1):
+def mu_opt(k0,k,T,lam,r=1,xi=1):
     ''' argument list: k0/T, k/T, T/Tc, Lambda/Tc '''
     K = ( T*T*abs(k0*k0-k*k) )**.5
 
+    qT = xi*pi*T
     ## schemes R.1, R.2, R.3
-    if (r==1): mu = (K**2 + (pi*T)**2)**.5
-    if (r==2): mu = max(K,pi*T)
-    if (r==3): mu = T*pi/tanh(T*pi/K)
+    if (r==1): mu = (K**2 + qT**2)**.5
+    if (r==2): mu = max(K,qT)
+    if (r==3): mu = qT/tanh(qT/K)
     #else: return -1
 
     #print(mu/lam)
@@ -67,18 +68,22 @@ def alpha_k0(tbl,nf,loops,k,T,tag):
     out = open("R."+str(r)+"/coupling_nf"+str(nf)+"_{"+"k={0:.2f}".format(k)+",t="+str(T)+"}."+tag+".dat",'w')
     out.write("# Columns: k0/T, mu_opt/Lambda, alpha xi={1,.5,2}\n")
 
-    if (nf==0): lam = 1/1.24
-    if (nf==2): lam = 1/0.56
+    if (nf==0):
+        lam = 1/1.24
+        xi  = 1
+    if (nf==2):
+        lam = 1/0.56
+        xi  = 2
 
-    out.write("# (Tc = "+str(lam)+" Lambda, T="+str(T)+"Tc, nf="+str(nf)+", "+str(loops)+"-loop RG)\n")
+    out.write("# (Tc = "+str(1/lam)+" Lambda, T="+str(T)+"Tc, nf="+str(nf)+", "+str(loops)+"-loop RG)\n")
 
-    blurb = ["mu_opt=sqrt{(pi.T)^2+|K^2|}","mu_opt=max[|K|,pi.T]","pi.T/tanh(pi.T/|K|)"]
+    blurb = ["mu_opt=sqrt{("+str(xi)+".pi.T)^2+|K^2|}","mu_opt=max[|K|,pi.T]","pi.T/tanh(pi.T/|K|)"]
     out.write("# ("+blurb[r-1]+", vary mu=mu_opt.xi)\n")
 
     k0=1e-1    # initial k0 value
 
-    while k0<1e3:
-        mu=mu_opt(k0,k,T,lam,r)
+    while k0<=1e3:
+        mu=mu_opt(k0,k,T,lam,r,xi)
 
         # xi = 1
         alpha1 = interpolate_Alpha(tbl,mu)
@@ -95,25 +100,27 @@ def alpha_k0(tbl,nf,loops,k,T,tag):
     return 0
 
 loops = 5
-nf    = 2
+nf    = 0
 tag   = "R1(5)"
 print("Reading table ...")
 tbl = ReadTable(nf,loops)
 
-#T = 1.3
-#for i in [1,2,3]:
-#    k = i*2*pi*7/24.
-#    alpha_k0(tbl,nf,loops,k,T,tag)
+if (nf==0):
+    T = 1.3
+    for i in [1,2,3]:
+        k = i*2*pi*7/24.
+        alpha_k0(tbl,nf,loops,k,T,tag)
+    T = 1.1
+    for i in [1,2,3]:
+        k = i*2*pi/3.
+        alpha_k0(tbl,nf,loops,k,T,tag)
 
-T = 1.2
-for i in [1,2,3]:
-    k = (i**.5)*pi/2.
-    alpha_k0(tbl,nf,loops,k,T,tag)
-alpha_k0(tbl,nf,loops,pi,T,tag)
-alpha_k0(tbl,nf,loops,1.5*pi,T,tag)
-
-#T = 1.1
-#for i in [1,2,3]:
-#    k = i*2*pi/3.
-#    alpha_k0(tbl,nf,loops,k,T,tag)
+if (nf==2):
+    T = 1.2
+    alpha_k0(tbl,nf,loops,pi,T,tag)
+    alpha_k0(tbl,nf,loops,1.5*pi,T,tag)
+    alpha_k0(tbl,nf,loops,(14.**.5)*pi/2.,T,tag)
+    for i in [1,2,3]:
+        k = (i**.5)*pi/2.
+        alpha_k0(tbl,nf,loops,k,T,tag)
 
